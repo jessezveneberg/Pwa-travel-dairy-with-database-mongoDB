@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Щоденник подорожей</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/idb@7/build/umd.js"></script>
+  <style>
+    /* Критичні стилі для миттєвого відображення */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #2c3e50; }
+    .app-container { max-width: 1000px; margin: 0 auto; padding: 20px; background: #f8f9fa; min-height: 100vh; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { color: #2E7D32; font-size: 2.2em; margin: 0; }
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>🌍 Щоденник подорожей</h1>
+      <button id="install-btn" class="hidden">📲 Встановити додаток</button>
+    </header>
+
+    <main>
+      <section class="entry-form">
+        <h2>➕ Новий запис</h2>
+        <form id="entry-form">
+          <div class="form-group">
+            <label for="title">Назва:</label>
+            <input type="text" id="title" required placeholder="Назва подорожі">
+          </div>
+          
+          <div class="form-group">
+            <label for="description">Опис:</label>
+            <textarea id="description" rows="3" placeholder="Опишіть вашу подорож..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="photo">Фото:</label>
+            <input type="file" id="photo" accept="image/*">
+            <div id="photo-preview" class="photo-preview"></div>
+          </div>
+          
+          <div class="form-group">
+            <label for="location">Місце:</label>
+            <input type="text" id="location" readonly placeholder="Натисніть кнопку для отримання місця">
+            <button type="button" id="get-location">📍 Отримати моє місце</button>
+            <button type="button" id="manual-location" class="manual-location-btn hidden">
+              💾 Зберегти місце
+            </button>
+          </div>
+          
+          <button type="submit">💾 Зберегти запис</button>
+        </form>
+      </section>
+
+      <section class="entries-list">
+        <h2>📖 Мої подорожі</h2>
+        <div id="entries-container" class="entries-container">
+          <p>Завантаження записів...</p>
+        </div>
+        <button id="generate-pdf" class="generate-btn">📄 Згенерувати PDF звіт</button>
+        <button id="clear-data" class="clear-btn">🗑️ Очистити всі дані</button>
+        <button id="clear-cache" class="clear-btn">🔄 Очистити кеш PWA</button>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/app.js"></script>
+  
+  <script>
+    // Примусове оновлення Service Worker при кожному завантаженні
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async function() {
+        try {
+          // Спочатку видаляємо всі старі реєстрації
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let registration of registrations) {
+            await registration.unregister();
+            console.log('Старий Service Worker видалено');
+          }
+          
+          // Очищаємо кеш
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            for (let cacheName of cacheNames) {
+              await caches.delete(cacheName);
+              console.log('Кеш видалено:', cacheName);
+            }
+          }
+          
+          // Реєструємо новий Service Worker
+          const registration = await navigator.serviceWorker.register('/service-worker.js?v=2');
+          console.log('Новий Service Worker зареєстровано:', registration);
+          
+        } catch (error) {
+          console.error('Помилка оновлення Service Worker:', error);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
